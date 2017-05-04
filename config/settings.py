@@ -1,6 +1,5 @@
-ENV = 'local'
-
 SETTINGS = {
+  'env': 'local',
   'local': {
     'mongo': {
       'host': 'localhost',
@@ -19,3 +18,11 @@ SETTINGS = {
 
 
 CRAWLER_CONFIG_FILE_PATH = 'config/subreddits.json'
+
+
+try:
+  from config.settings_local import set_locals
+
+  set_locals(SETTINGS)
+except:
+  print('no SETTINGS_LOCAL')

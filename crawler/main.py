@@ -7,38 +7,35 @@ import praw
 from config.settings import CRAWLER_CONFIG_FILE_PATH
 from db import RedditMongoClient
 
-class SubmissionsProcessingThread(threading.Thread):
-  def __init__(self, threadID, subreddit_name, generator):
+class EntityProcessingThread(threading.Thread):
+  def __init__(self, threadID, subreddit_name, task, generator):
     threading.Thread.__init__(self)
     self.threadID = threadID
-    self.mongoClient = RedditMongoClient(subreddit_name)
+    self.mongoClient = RedditMongoClient()
     self.generator = generator
+    self.subreddit_name = subreddit_name
+    self.task = task
   def run(self):
-    for submission in self.generator:
-      self.mongoClient.insert_submission(submission)
+    for entity in self.generator:
+      if self.task == 'comment':
+        self.mongoClient.insert_comment(self.subreddit_name, entity)
+      elif self.task == 'submission':
+        self.mongoClient.insert_submission(self.subreddit_name, entity)
+      else:
+        raise Exception()
 
-
-class CommentsProcessingThread(threading.Thread):
-  def __init__(self, threadID, subreddit_name, generator):
-    threading.Thread.__init__(self)
-    self.threadID = threadID
-    self.mongoClient = RedditMongoClient(subreddit_name)
-    self.generator = generator
-  def run(self):
-    for comment in self.generator:
-      self.mongoClient.insert_comment(comment)
 
 def process_subreddit(subreddit_name, subreddit):
   print "Starting process %s" % subreddit_name
   submissions_thread = None
   comments_thread = None
   try:
-    submissions_thread = SubmissionsProcessingThread \
+    submissions_thread = EntityProcessingThread \
       (subreddit_name + '_submissions', subreddit_name, \
-        subreddit.stream.submissions())
-    comments_thread = CommentsProcessingThread \
+        'submission', subreddit.stream.submissions())
+    comments_thread = EntityProcessingThread \
       (subreddit_name + '_comments', subreddit_name, \
-        subreddit.stream.comments())
+        'comment', subreddit.stream.comments())
     submissions_thread.start()
     comments_thread.start()
   except Exception as e:
