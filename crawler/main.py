@@ -58,6 +58,7 @@ def run_all_processes():
     subreddits = get_targeted_subreddits()
   except:
     print("Failed to read config file from path %s" % CRAWLER_CONFIG_FILE_PATH)
+    return
 
   processes = []
   if subreddits:
